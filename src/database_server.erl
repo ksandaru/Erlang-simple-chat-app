@@ -32,20 +32,21 @@ init(Nodes) ->
   {ok, #database_server_state{}}.
 
 store(Node, Username, Location, Gender) ->
-  gen_server:call(database_server, {store_db, Node, Username, Location, Gender}).
+  gen_server:call({database_server,'john@DESKTOP-RD414DV'}, {store_db, Node, Username, Location, Gender}).
 
 %%getdb(Node) ->
 %%  gen_server:call({local, ?MODULE}, {get_db, Node}).
 
+%%Node arg should be string("nmn@...")
 getalldb(Node) ->
-  gen_server:call(database_server, {get_all_db, Node}).
+  gen_server:call({database_server,'john@DESKTOP-RD414DV'}, {get_all_db, Node}).
 delete(Node) ->
-  gen_server:call(database_server, {delete, Node}).
+  gen_server:call({database_server,'john@DESKTOP-RD414DV'}, {delete, Node}).
 
 handle_call({store_db, Node, Username, Location, Gender}, _From, State = #database_server_state{}) ->
   database_logic:store_db(Node, Username, Location, Gender),
-  io:format("userdetails are saved!"),
-  {reply, ok, State};
+  N = Node ++" User details are saved!",
+  {reply, {ok, N}, State};
 
 %%handle_call({get_db, Node}, _From, State = #database_server_state{}) ->
 %%  X = database_logic:get_db(Node),
@@ -56,13 +57,13 @@ handle_call({store_db, Node, Username, Location, Gender}, _From, State = #databa
 handle_call({get_all_db, Node}, _From, State = #database_server_state{}) ->
   Y = database_logic:get_all_dbe(Node),
   {_, [{Name, Location, Gender}]} = Y,
-  io:format("SENDER NAME: ~p\t LOCATION: ~p\t GENDER: ~p~n", [Name,Location,Gender]),
-  {reply, ok, State};
+  Z ="SENDER NAME: "++Name++" LOCATION: "++Location++" GENDER: "++Gender,
+  {reply, {ok, Z}, State};
 
 handle_call({delete, Node},  _From, State = #database_server_state{}) ->
   database_logic:delete_db(Node),
-  io:format("~p node data deleted!", [Node]),
-  {reply, ok, State}.
+  M ="Node: " ++Node++ "data deleted!",
+  {reply, {ok, M}, State}.
 
 handle_cast(_Request, State = #database_server_state{}) ->
   {noreply, State}.

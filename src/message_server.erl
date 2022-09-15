@@ -11,7 +11,7 @@
 
 -behaviour(gen_server).
 
--export([send_message/2, receive_message/3, start_link/1, stop/0, receive_db_data/1]).
+-export([send_message/2, receive_message/3, start_link/1, stop/0]).
 -export([init/1, handle_call/3, handle_cast/2, handle_info/2, terminate/2,
   code_change/3]).
 
@@ -29,7 +29,7 @@ start_link(Name) ->
 init(Name) ->
   io:format("~p is connected with the server...~n", [Name]),
   {ok, #message_server_state{
-    from = node(),
+    from = atom_to_list(node()),
     to = [],
     msgsent = [],
     msgreceived = []
@@ -37,8 +37,13 @@ init(Name) ->
 stop() ->
   gen_server:stop(?MODULE).
 
-receive_db_data(Sender) ->
-  database_server:getalldb(Sender).
+%%here Sender argument should be string("clark@....")
+%%receive_db_data(Sender) ->
+%%  database_server:getalldb(Sender).
+
+%%receive_db_data(Sender) ->
+%%  gen_server:call({database_server,'john@DESKTOP-RD414DV'},{rec_data, Sender}).
+
 
 send_message(To, Msg) ->
   gen_server:call({?MODULE, node()}, {send, To, Msg}).
@@ -51,11 +56,17 @@ handle_call({send, To, Msg}, _From, State = #message_server_state{to = Receivers
   receive_message(Sender, To, Msg),
   {reply, ok, State#message_server_state{msgsent = [Msg | Msgsent], to = [To | Receivers]}};
 
+
 handle_call({reciv, Sender, Msg}, _From, State = #message_server_state{msgreceived = Msgreceived}) ->
   io:format("Sent by: ~p~n", [Sender]),
   io:format("Message: ~p~n", [Msg]),
-  receive_db_data(Sender),
+  M = database_server:getalldb(Sender),
+  io:format("SENDER-DETAILS>>: ~p~n",[M]),
   {reply, ok, State#message_server_state{msgreceived = [Msg | Msgreceived]}}.
+
+%%handle_call({rec_data, Sender}, _From, State = #message_server_state{from = Sender}) ->
+%%  database_server:getalldb(Sender),
+%%  {reply, ok, State}.
 
 handle_cast(_Request, State = #message_server_state{}) ->
   {noreply, State}.

@@ -14,25 +14,25 @@ start_link() ->
   supervisor:start_link({local, ?MODULE}, ?MODULE, []).
 
 init([]) ->
-  io:format("~p / ~p starting...~n", [{global, ?MODULE}, self()]),
-  AChild = #{id => database_server,
-    start => {database_server, start_link, []},
+  io:format("~p / ~p starting superviser...~n", [{global, ?MODULE}, self()]),
+  AChild = #{id => message_server,
+    start => {message_server, start_link, []},
     restart => permanent,
     shutdown => 5000,
     type => worker,
-    modules => [database_server]},
+    modules => [message_server]},
 
   {ok, {#{strategy => one_for_one,
     intensity => 5,
     period => 30},
     [AChild]}
   },
-  BChild = #{id => database_logic,
-    start => {database_logic, start_link, []},
+  BChild = #{id => database_server,
+    start => {database_server, start_link, []},
     restart => permanent,
     shutdown => 2000,
     type => worker,
-    modules => [database_logic]},
+    modules => [database_server]},
 
   {ok, {#{strategy => one_for_one,
     intensity => 5,
