@@ -11,21 +11,21 @@
 
 %% API
 
--export([install/1, get_db/1, get_all_dbe/1, delete_db/1, store_db/4]).
+-export([init_db/0, get_db/1, get_all_dbe/1, delete_db/1, store_db/4]).
 -include_lib("stdlib/include/qlc.hrl").
 -record(userDetails, {node,username, location, gender}).
 
 %%initialize database
-install(Nodes) ->
-  ok = mnesia:create_schema(Nodes),
-  rpc:multicall(Nodes, application, start, [mnesia]),
+init_db() ->
+  ok = mnesia:create_schema([node()|nodes()]),
+  rpc:multicall([node()|nodes()], application, start, [mnesia]),
   try
       mnesia:table_info(type,userDetails)
   catch
       exit:_  ->
         mnesia:create_table(userDetails, [{attributes, record_info(fields, userDetails)},
           {type, bag},
-          {disc_copies, Nodes}])
+          {disc_copies, [node()|nodes()]}])
   end.
 
 

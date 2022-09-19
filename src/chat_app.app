@@ -1,11 +1,8 @@
 {application, chat_app,
   [
-    {description, "my chat app."},
+    {description, "distributed chat application with mnesia."},
     {vsn, "0.1.0"},
     {modules,[
-      message_server,
-      chat_sup,
-      database_logic,
       database_server
     ]},
     {applications, [

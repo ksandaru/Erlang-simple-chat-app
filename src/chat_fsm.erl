@@ -2,88 +2,73 @@
 %%% @author Kanishka Bandara
 %%% @copyright (C) 2022, <COMPANY>
 %%% @doc
-%%%
 %%% @end
-%%% Created : 14. Sep 2022 1:27 PM
 %%%-------------------------------------------------------------------
 -module(chat_fsm).
--author("Kanishka Bandara").
 
--behaviour(gen_statem).
+-behaviour(gen_fsm).
 
-%% API
--export([start_link/0]).
 
-%% gen_statem callbacks
--export([init/1, format_status/2, state_name/3, handle_event/4, terminate/3,
-  code_change/4, callback_mode/0]).
+-export([start_link/0, idle/2, ready_to_receive/1, ready_to_send/1, message_send/2, recived_message/2]).
+-export([init/1, handle_event/3,
+  handle_sync_event/4, handle_info/3, terminate/3, code_change/4, send_message/2]).
 
 -define(SERVER, ?MODULE).
 
--record(chat_fsm_state, {}).
-
+-record(chat_fsm_state, {from, to, msgsent}).
 %%%===================================================================
 %%% API
 %%%===================================================================
 
-%% @doc Creates a gen_statem process which calls Module:init/1 to
-%% initialize. To ensure a synchronized start-up procedure, this
-%% function does not return until Module:init/1 has returned.
 start_link() ->
-  gen_statem:start_link({local, ?SERVER}, ?MODULE, [], []).
+  gen_fsm:start_link({local, ?MODULE}, ?MODULE, [], []).
 
-%%%===================================================================
-%%% gen_statem callbacks
-%%%===================================================================
 
-%% @private
-%% @doc Whenever a gen_statem is started using gen_statem:start/[3,4] or
-%% gen_statem:start_link/[3,4], this function is called by the new
-%% process to initialize.
-init([]) ->
-  {ok, state_name, #chat_fsm_state{}}.
+init([]) -> {ok, idle, #chat_fsm_state{
+  from = "",
+  to = "",
+  msgsent = ""
+}}.
 
-%% @private
-%% @doc This function is called by a gen_statem when it needs to find out
-%% the callback mode of the callback module.
-callback_mode() ->
-  handle_event_function.
+ready_to_receive(Receivr) ->
+  gen_fsm:send_event({?MODULE, Receivr}, recieve_msg).
+recieve_message(Message, Reciever) ->
+  gen_fsm:send_event({?MODULE, Reciever}, {recieve_message, Message}).
+message_send(Message, To) ->
+  gen_fsm:send_event({?MODULE, node()}, {send, Message, To}).
+ready_to_send(Reciever) ->
+  gen_fsm:send_event({?MODULE, node()}, {msg_send, Reciever}).
 
-%% @private
-%% @doc Called (1) whenever sys:get_status/1,2 is called by gen_statem or
-%% (2) when gen_statem terminates abnormally.
-%% This callback is optional.
-format_status(_Opt, [_PDict, _StateName, _State]) ->
-  Status = some_term,
-  Status.
+idle(recieve_msg, State) ->
+  io:format("recieve"),
+  {next_state, recived_message, State};
+idle({msg_send, Reciever}, S) ->
+  io:format("ready to send message"),
+  ready_to_receive(Reciever),
+  {next_state, send_message, S}.
+send_message({send, Message, Reciever}, S) ->
+  io:format("Message sent"),
+  recieve_message(Message, Reciever),
+  {next_state, idle, S}.
+recived_message({recieve_message, Message}, State) ->
+  io:format("Msg received."),
+  message_server:recv_msg(Message),
+  {next_state, idle, State}.
 
-%% @private
-%% @doc There should be one instance of this function for each possible
-%% state name.  If callback_mode is state_functions, one of these
-%% functions is called when gen_statem receives and event from
-%% call/2, cast/2, or as a normal process message.
-state_name(_EventType, _EventContent, State = #chat_fsm_state{}) ->
-  NextStateName = next_state,
-  {next_state, NextStateName, State}.
 
-%% @private
-%% @doc If callback_mode is handle_event_function, then whenever a
-%% gen_statem receives an event from call/2, cast/2, or as a normal
-%% process message, this function is called.
-handle_event(_EventType, _EventContent, _StateName, State = #chat_fsm_state{}) ->
-  NextStateName = the_next_state_name,
-  {next_state, NextStateName, State}.
+handle_event(_Event, StateName, State = #chat_fsm_state{}) ->
+  {next_state, StateName, State}.
 
-%% @private
-%% @doc This function is called by a gen_statem when it is about to
-%% terminate. It should be the opposite of Module:init/1 and do any
-%% necessary cleaning up. When it returns, the gen_statem terminates with
-%% Reason. The return value is ignored.
+handle_sync_event(_Event, _From, StateName, State = #chat_fsm_state{}) ->
+  Reply = ok,
+  {reply, Reply, StateName, State}.
+
+handle_info(_Info, StateName, State = #chat_fsm_state{}) ->
+  {next_state, StateName, State}.
+
 terminate(_Reason, _StateName, _State = #chat_fsm_state{}) ->
   ok.
 
-%% @private
-%% @doc Convert process state when code is changed
 code_change(_OldVsn, StateName, State = #chat_fsm_state{}, _Extra) ->
   {ok, StateName, State}.
 

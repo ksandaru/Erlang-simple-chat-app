@@ -8,8 +8,8 @@
 
 -behaviour(gen_server).
 
--export([start_link/1, store/4, getalldb/1, delete/1]).
--export([init/1, handle_call/3, handle_cast/2, handle_info/2, terminate/2,
+-export([start_link/0, store/4, getalldb/1, delete/1, init/1]).
+-export([ handle_call/3, handle_cast/2, handle_info/2, terminate/2,
   code_change/3]).
 
 -define(SERVER, ?MODULE).
@@ -20,16 +20,15 @@
 %%% Spawning and gen_server implementation
 %%%===================================================================
 
-start_link(Nodes) ->
-  gen_server:start_link({local,?MODULE}, ?MODULE, Nodes, []).
+start_link() ->
+  gen_server:start_link({local,?MODULE}, ?MODULE, [], []).
 
-
-
-init(Nodes) ->
+init([]) ->
   process_flag(trap_exit, true),
-  io:format("~p (~p) starting...~n", [{local, ?MODULE}, self()]),
-  database_logic:install(Nodes),
+  io:format("~p (~p) starting database server...~n", [{local, ?MODULE}, self()]),
+  database_logic:init_db(),
   {ok, #database_server_state{}}.
+
 
 store(Node, Username, Location, Gender) ->
   gen_server:call({database_server,'john@DESKTOP-RD414DV'}, {store_db, Node, Username, Location, Gender}).

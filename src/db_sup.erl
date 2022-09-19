@@ -4,26 +4,27 @@
 %%% @doc
 %%% @end
 %%%-------------------------------------------------------------------
--module(chat_sup).
+-module(db_sup).
 
 -behaviour(supervisor).
 
--export([start_link/0, init/1, start_link_shell2/0]).
+-export([start_link/0, init/1, start_link_shell/0]).
 
-start_link_shell2()->
+start_link_shell()->
   {ok, Pid}= supervisor:start_link({global,?MODULE}, ?MODULE,[]),
   unlink(Pid).
 
 start_link() ->
-  supervisor:start_link({local, ?MODULE}, ?MODULE, []).
+  supervisor:start_link({global, ?MODULE}, ?MODULE, []).
 
 init([]) ->
-  AChild = #{id => 'message_server',
-    start => {'message_server', start_link, []},
+  io:format("~p / ~p starting database superviser...~n", [{global, ?MODULE}, self()]),
+  AChild = #{id => 'database_server',
+    start => {'database_server', start_link, []},
     restart => permanent,
     shutdown => infinity,
     type => worker,
-    modules => ['message_server']},
+    modules => ['database_server']},
 
   {ok, {#{strategy => one_for_all,
     intensity => 5,
