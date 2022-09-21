@@ -18,39 +18,39 @@ start_link() ->
   supervisor:start_link({global, ?MODULE}, ?MODULE, []).
 
 init([]) ->
-  AChild = #{id => 'message_server',
+  AChild = #{id => 'message_server1',
     start => {'message_server', start_link, ['john']},
     restart => permanent,
     shutdown => infinity,
     type => worker,
     modules => ['message_server']},
 
-  {ok, {#{strategy => one_for_all,
+  {ok, {#{strategy => one_for_one,
     intensity => 5,
     period => 30},
     [AChild]}
   },
-  AChild = #{id => 'message_server',
+  BChild = #{id => 'message_server2',
     start => {'message_server', start_link, ['mary']},
     restart => permanent,
     shutdown => infinity,
     type => worker,
     modules => ['message_server']},
 
-  {ok, {#{strategy => one_for_all,
+  {ok, {#{strategy => one_for_one,
     intensity => 5,
     period => 30},
-    [AChild]}
+    [BChild]}
   },
-  AChild = #{id => 'message_server',
+  CChild = #{id => 'message_server3',
     start => {'message_server', start_link, ['clark']},
     restart => permanent,
     shutdown => infinity,
     type => worker,
     modules => ['message_server']},
 
-  {ok, {#{strategy => one_for_all,
+  {ok, {#{strategy => one_for_one,
     intensity => 5,
     period => 30},
-    [AChild]}
+    [CChild]}
   }.

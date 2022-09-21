@@ -30,6 +30,7 @@ start_link(Name) ->
 
 init(Name) ->
   io:format("~p is connected with the server...~n", [Name]),
+  chat_fsm:start_link(),
   {ok, #message_server_state{
     from = atom_to_list(node()),
     to = [],
@@ -45,6 +46,7 @@ send_message(To, Msg) ->
 receive_message(Sender, To, Msg) ->
   gen_server:call({?MODULE, list_to_atom(To)}, {reciv, Sender, Msg}).
 
+%%fsm actions to send event for fsm for changing states
 recv_msg(Msg)->
   gen_server:call({?MODULE, node()}, {recive, Msg}).
 
@@ -60,7 +62,7 @@ handle_call({send, To, Msg}, _From, State = #message_server_state{to = Receivers
 
 handle_call({reciv, Sender, Msg}, _From, State = #message_server_state{msgreceived = Msgreceived}) ->
   io:format("Sent by: ~p~n", [Sender]),
-  io:format("Message: ~p~n", [Msg]),
+%%  io:format("Message: ~p~n", [Msg]),
   M = database_server:getalldb(Sender),
   io:format("SENDER-DETAILS>>: ~p~n",[M]),
   {reply, ok, State#message_server_state{msgreceived = [Msg | Msgreceived]}};
