@@ -10,9 +10,10 @@
 -author("Kanishka Bandara").
 
 %% API
--export([create_chat_node/1, send_message/2, stop_conversation/0, save_user_data/4]).
+-export([register_user/1, send_message/2, stop_conversation/0, save_user_data/4]).
 
-create_chat_node(Username)->
+%%chat client
+register_user(Username)->
   message_server:start_link(Username).
 
 send_message(ReceiverNode,Message)->
@@ -21,5 +22,6 @@ send_message(ReceiverNode,Message)->
 stop_conversation()->
   message_server:stop().
 
-save_user_data(Nodename, Username, Location, Gender)->
-  database_server:store(Nodename, Username, Location, Gender).
+%%database client
+save_user_data(NodeName, Username, Location, Gender)->
+  database_server:store(NodeName, Username, Location, Gender).
